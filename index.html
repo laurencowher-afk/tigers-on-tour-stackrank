@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tigers on Tour Ballot</title>
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Gloock&family=Figtree:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a single scorecard column. Ballot and tally are two tabs of the same card. */
+:root{
+  --paper:#f3f5ef; --card:#ffffff; --ink:#1c2a21; --muted:#5b685f; --line:#d8ddd2; --chip:#e9ede4;
+  --accent:#c4561a; --accent-ink:#ffffff; --accent-soft:#f7e3d6;
+  --no:#b3261e; --no-soft:#f6dedb; --good:#2c7548; --good-soft:#dcefe2;
+  --display:"Big Shoulders Display","Arial Narrow",Impact,sans-serif;
+  --body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"DM Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#111713; --card:#19211c; --ink:#e7ede7; --muted:#9ba79e; --line:#2c372f; --chip:#222c25;
+  --accent:#ec7b3c; --accent-ink:#1a0f08; --accent-soft:#3a2416;
+  --no:#ef6d61; --no-soft:#3a1f1c; --good:#64c38a; --good-soft:#18301f; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#111713; --card:#19211c; --ink:#e7ede7; --muted:#9ba79e; --line:#2c372f; --chip:#222c25;
+  --accent:#ec7b3c; --accent-ink:#1a0f08; --accent-soft:#3a2416;
+  --no:#ef6d61; --no-soft:#3a1f1c; --good:#64c38a; --good-soft:#18301f; color-scheme:dark}
+
+*{box-sizing:border-box}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{background:var(--paper);color:var(--ink);font:16px/1.5 var(--body);padding-inline:16px;padding-block:28px 64px}
+.wrap{max-width:640px;margin:0 auto;display:grid;gap:22px}
+a{color:var(--accent)}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;line-height:1}
+.eyebrow{font-size:.78rem;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:600}
+header{display:grid;gap:10px}
+header h1{font-size:clamp(2.6rem,9vw,3.6rem);font-weight:800;letter-spacing:.01em;text-transform:uppercase}
+header h1 span{color:var(--accent)}
+.lede{margin:0;max-width:60ch;color:var(--ink)}
+.rules{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:4px 0 0;padding:0;list-style:none}
+.rules li{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:.88rem;line-height:1.35;color:var(--muted);min-width:0}
+.rules b{display:block;color:var(--ink);font-size:.95rem;margin-bottom:2px}
+@media (max-width:560px){.rules{grid-template-columns:1fr}}
+
+.tabs{display:flex;gap:4px;background:var(--chip);padding:4px;border-radius:12px}
+.tabs button{flex:1;border:0;background:transparent;color:var(--muted);font:600 .95rem var(--body);padding:10px;border-radius:9px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--card);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.tabs .count{font-family:var(--mono);font-size:.8rem;margin-left:6px;color:var(--accent)}
+
+.panel{display:grid;gap:18px}
+label.field{display:grid;gap:6px;font-weight:600;font-size:.92rem}
+input[type=text],input[type=number],textarea{font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:11px 12px;width:100%}
+textarea{font-family:var(--mono);font-size:.88rem;min-height:110px;resize:vertical}
+input:focus-visible,textarea:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.hint{font-size:.86rem;color:var(--muted);margin:0}
+ol.rank{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.row{display:grid;grid-template-columns:auto 44px minmax(0,1fr) auto;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 10px 10px 6px;transition:border-color .15s}
+.row.dragging{border-color:var(--accent);box-shadow:0 6px 20px rgba(0,0,0,.14);position:relative;z-index:2}
+.row.vetoed{border-color:var(--no);background:linear-gradient(90deg,var(--no-soft),var(--card) 70%)}
+.handle{touch-action:none;cursor:grab;border:0;background:transparent;color:var(--muted);padding:8px 4px;display:grid;place-items:center}
+.handle svg{width:16px;height:22px;fill:currentColor}
+.num{font-family:var(--display);font-weight:800;font-size:2rem;text-align:center;color:var(--accent);font-variant-numeric:tabular-nums;line-height:1}
+.num small{display:block;font-family:var(--mono);font-size:.62rem;font-weight:400;color:var(--muted);margin-top:3px;letter-spacing:0}
+.row.vetoed .num{color:var(--no)}
+.place{min-width:0}
+.place b{font-size:1.02rem;display:block}
+.place span{font-size:.84rem;color:var(--muted);display:block}
+.moves{display:flex;flex-direction:column;gap:2px}
+.moves button{border:1px solid var(--line);background:var(--paper);color:var(--ink);width:34px;height:26px;border-radius:7px;cursor:pointer;font-size:.8rem;line-height:1}
+.moves button:disabled{opacity:.35;cursor:default}
+
+.veto{display:flex;gap:10px;align-items:flex-start;background:var(--card);border:1px dashed var(--line);border-radius:12px;padding:12px 14px;cursor:pointer}
+.veto input{margin-top:4px;accent-color:var(--no);width:18px;height:18px}
+.veto b{display:block}
+.veto span{font-size:.86rem;color:var(--muted)}
+.vetobtn{margin-top:6px;border:1px solid var(--line);background:var(--paper);color:var(--muted);font:600 .78rem var(--body);padding:4px 10px;border-radius:99px;cursor:pointer}
+.vetobtn[aria-pressed="true"]{background:var(--no);border-color:var(--no);color:#fff}
+
+.btn{border:0;background:var(--accent);color:var(--accent-ink);font:700 1rem var(--body);padding:13px 18px;border-radius:11px;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.btn.small{padding:8px 12px;font-size:.88rem}
+.btn:disabled{opacity:.5;cursor:default}
+.actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+
+.receipt{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;display:grid;gap:12px}
+.code{font-family:var(--mono);font-size:1.05rem;background:var(--chip);border-radius:9px;padding:12px;word-break:break-all;user-select:all}
+.ok{color:var(--good);font-weight:700}
+.err{color:var(--no);font-weight:600}
+
+.status{display:grid;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
+.status h2{font-size:1.7rem;text-transform:uppercase;font-weight:800}
+.meter{height:8px;background:var(--chip);border-radius:99px;overflow:hidden}
+.meter i{display:block;height:100%;background:var(--accent);border-radius:99px;transition:width .3s}
+.voters{display:flex;flex-wrap:wrap;gap:6px;margin:0;padding:0;list-style:none}
+.voters li{display:flex;align-items:center;gap:6px;background:var(--chip);border-radius:99px;padding:4px 6px 4px 11px;font-size:.86rem}
+.voters li em{font-style:normal;font-family:var(--mono);font-size:.7rem;color:var(--muted)}
+.voters button{border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:.9rem;padding:0 4px;border-radius:99px}
+.voters button:hover{color:var(--no)}
+
+.verdict{border-radius:14px;padding:16px;display:grid;gap:6px;border:1px solid var(--line)}
+.verdict.clean{background:var(--good-soft);border-color:var(--good)}
+.verdict.close{background:var(--accent-soft);border-color:var(--accent)}
+.verdict h2{font-size:2rem;text-transform:uppercase;font-weight:800}
+.verdict p{margin:0}
+.tablewrap{overflow-x:auto;background:var(--card);border:1px solid var(--line);border-radius:14px}
+table{border-collapse:collapse;width:100%;font-size:.92rem;min-width:520px}
+th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+tr:last-child td{border-bottom:0}
+td.n{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right}
+th.n{text-align:right}
+td.pts{font-family:var(--display);font-weight:800;font-size:1.3rem;text-align:right}
+tr.lead td{background:var(--accent-soft)}
+.matrix td,.matrix th{text-align:center}
+.matrix td.w{color:var(--good);font-weight:700}
+.matrix td.l{color:var(--muted)}
+details{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 16px}
+details summary{cursor:pointer;font-weight:600}
+details[open] summary{margin-bottom:10px}
+.confirm{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:.9rem}
+.orgline{display:flex;flex-wrap:wrap;gap:12px;align-items:end}
+.orgline label{max-width:140px}
+footer{font-size:.84rem;color:var(--muted)}
+/* playful layer */
+[hidden]{display:none!important}
+:root{--display:"Fredoka","Arial Rounded MT Bold",system-ui,sans-serif;--paper:#fff3dc;--card:#fffdf8;--ink:#2b1a10;--muted:#7b6050;--line:#f1d3a4;--chip:#ffe4b8;--accent:#ff6a13;--accent-ink:#ffffff;--accent-soft:#ffdcbf;--no:#d62839;--no-soft:#ffd9dc;--good:#1f9d55;--good-soft:#d6f5e1;--pop:#ffc93c;--shadow:0 4px 0 rgba(120,60,10,.16)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--paper:#1d130d;--card:#2a1c13;--ink:#ffeedd;--muted:#c9ab93;--line:#4a3222;--chip:#3a271a;--accent:#ff8a3d;--accent-ink:#2a1206;--accent-soft:#4a2a14;--no:#ff6b78;--no-soft:#45202a;--good:#5fd18c;--good-soft:#17301f;--pop:#ffc93c;--shadow:0 4px 0 rgba(0,0,0,.35)}}
+:root[data-theme="dark"]{--paper:#1d130d;--card:#2a1c13;--ink:#ffeedd;--muted:#c9ab93;--line:#4a3222;--chip:#3a271a;--accent:#ff8a3d;--accent-ink:#2a1206;--accent-soft:#4a2a14;--no:#ff6b78;--no-soft:#45202a;--good:#5fd18c;--good-soft:#17301f;--pop:#ffc93c;--shadow:0 4px 0 rgba(0,0,0,.35)}
+body{background:radial-gradient(circle at 12px 12px,rgba(255,106,19,.13) 2px,transparent 3px) 0 0/28px 28px var(--paper)}
+h1,h2{text-transform:none!important;letter-spacing:-.005em!important;font-weight:var(--dw,700)!important}
+header .eyebrow{display:inline-block;justify-self:start;background:var(--pop);color:#2b1a10;padding:6px 14px;border-radius:99px;transform:rotate(-2deg);box-shadow:var(--shadow)}
+header h1{text-shadow:3px 3px 0 var(--pop)}
+header h1::after{content:" \1F42F";display:inline-block;animation:wiggle 3s ease-in-out infinite}
+.rules li{border:2px solid var(--line);border-radius:18px;box-shadow:var(--shadow)}
+.rules li:nth-child(1){transform:rotate(-1.2deg)}.rules li:nth-child(2){transform:rotate(.8deg)}.rules li:nth-child(3){transform:rotate(-.6deg)}
+.rules li:nth-child(1) b::before{content:"\1F3C6 "}.rules li:nth-child(2) b::before{content:"\1F645 "}.rules li:nth-child(3) b::before{content:"\1F93C "}
+.tabs{border:2px solid var(--line);border-radius:99px;padding:5px}
+.tabs button{border-radius:99px;transition:transform .15s}
+.tabs button:hover{transform:scale(1.03)}
+.tabs button[aria-selected="true"]{background:var(--accent);color:var(--accent-ink);box-shadow:var(--shadow)}
+.tabs button[aria-selected="true"] .count{color:var(--accent-ink)}
+#tab-ballot::before{content:"\1F5F3\FE0F "}#tab-tally::before{content:"\1F4CA "}
+input[type=text],input[type=number],textarea{border:2px solid var(--line);border-radius:14px}
+input:focus-visible,textarea:focus-visible{border-color:var(--accent)}
+.row{border:2px solid var(--line);border-radius:18px;box-shadow:var(--shadow);transition:transform .15s,border-color .15s}
+.row:hover{transform:translateY(-2px) rotate(-.4deg)}
+.row.dragging{transform:rotate(1.5deg) scale(1.02)}
+.num{background:var(--accent-soft);border-radius:14px;padding:6px 0}
+.row.vetoed .num{background:var(--no-soft)}
+ol.rank>.row:first-child .place b::after{content:" \1F451"}
+.moves button{border-width:2px;border-radius:10px;transition:transform .12s}
+.moves button:not(:disabled):hover{transform:scale(1.12)}
+.vetobtn{border-width:2px;transition:transform .15s}
+.vetobtn:hover{transform:scale(1.07) rotate(-2deg)}
+.vetobtn[aria-pressed="true"]{animation:pop .35s}
+.btn{border-radius:99px;box-shadow:0 4px 0 rgba(0,0,0,.25);transition:transform .1s,box-shadow .1s}
+.btn:hover{transform:translateY(-1px) rotate(-.5deg)}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(0,0,0,.25)}
+.btn.ghost{border-width:2px;box-shadow:var(--shadow)}
+.receipt:not([hidden]){animation:pop .4s}
+.receipt,.status,.verdict,details,.tablewrap{border-width:2px;border-radius:18px;box-shadow:var(--shadow)}
+.tablewrap{box-shadow:none}
+.meter{height:16px;border:2px solid var(--line)}
+.meter i{background:repeating-linear-gradient(-45deg,var(--accent) 0 10px,#3a1e0c 10px 16px)}
+.voters li{border:2px solid var(--line);background:var(--card)}
+.voters li::before{content:"\1F43E"}
+.verdict.clean h2::after{content:" \1F389"}.verdict.close h2::after{content:" \1F914"}
+.place span.loc{color:var(--accent);font-weight:700;font-size:.84rem}
+.num,td.pts{font-weight:var(--dw,800)}
+.rules b,header .eyebrow,.status .eyebrow,.verdict .eyebrow{font-family:var(--display)}
+.rules b{font-size:1.05rem}
+.vetobtn:disabled{opacity:.4;cursor:default}
+h2,.rules b{font-family:"Gloock",Georgia,"Times New Roman",serif!important;font-weight:400!important;letter-spacing:0!important}
+.place span.price{font-family:var(--mono);font-size:.78rem;color:var(--ink);margin-top:2px}
+body:not(.org) .tabs,body:not(.org) #p-tally{display:none!important}
+@keyframes wiggle{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(8deg)}}
+@keyframes pop{0%{transform:scale(.8)}60%{transform:scale(1.12)}100%{transform:scale(1)}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="eyebrow">Camelot turns 40 · April 18–21, 2027 · Sun–Wed</span>
+    <h1>Rank the <span>six</span></h1>
+    <p class="lede">Put all six places in order, best to worst, for you. Everyone's ranking counts the same, and nobody sees results until everyone's ballot is in. Need a refresher? <a href="https://claude.ai/code/artifact/8fd6fb85-2bcc-4f87-b47b-ad35f502c8b6" target="_blank" rel="noopener">Flip through the full deck</a>.</p>
+    <ul class="rules">
+      <li><b>6 points to 1</b>Your first pick gets 6 points, your last gets 1.</li>
+      <li><b>Hard nos</b>Optional. Flag either or both of your bottom two. They don't change the points, but if 3 or more of us hard-no the winner, we talk before anyone books.</li>
+      <li><b>Head to head</b>The points pick a leader. We also check whether any place would beat it in a straight two-way vote. If one would, those two go to a quick runoff.</li>
+    </ul>
+  </header>
+
+  <div class="tabs" role="tablist">
+    <button type="button" role="tab" id="tab-ballot" aria-selected="true" aria-controls="p-ballot">My ballot</button>
+    <button type="button" role="tab" id="tab-tally" aria-selected="false" aria-controls="p-tally">Tally<span class="count" id="tabCount"></span></button>
+  </div>
+
+  <!-- BALLOT -->
+  <section class="panel" id="p-ballot" role="tabpanel" aria-labelledby="tab-ballot">
+    <label class="field" for="voterName">Your name
+      <input type="text" id="voterName" maxlength="30" autocomplete="given-name" placeholder="Who's voting?">
+    </label>
+    <div>
+      <p class="hint" style="margin-bottom:10px">They start in random order. Drag the handle or use the arrows; top is your favorite.</p>
+      <p class="hint" style="margin-bottom:10px">Prices are rough lodging-only estimates for April 18–21 (3 nights), per person (pp) with 10 of us sharing, two to a room, before taxes and resort fees. Harbour Island is an all-in Airbnb quote for our dates. Mayakoba adds about 34% tax and service, and Sea Island adds a $38 per room per night resort fee.</p>
+      <ol class="rank" id="rankList"></ol>
+    </div>
+    <p class="hint" id="vetoText">Optional: tap "Hard no" on your last or second-to-last pick if you'd rather skip the trip than visit. Move a flagged place up out of your bottom two and the flag comes off.</p>
+    <div class="actions">
+      <button type="button" class="btn" id="submitBtn">Get my ballot code</button>
+      <span class="hint" id="submitHint"></span>
+    </div>
+    <div class="receipt" id="receipt" hidden>
+      <div id="receiptMsg"></div>
+      <div class="code" id="codeBox"></div>
+      <div class="actions">
+        <button type="button" class="btn small" id="copyBtn">Copy code</button>
+        <span class="hint" id="copyMsg"></span>
+      </div>
+      <p class="hint" id="receiptHow">Text this code to Lauren directly, not the group chat. That way nobody's ranking sways anyone else's. Changed your mind? Re-rank and send a new code; your latest one counts.</p>
+    </div>
+  </section>
+
+  <!-- TALLY -->
+  <section class="panel" id="p-tally" role="tabpanel" aria-labelledby="tab-tally" hidden>
+    <div class="status">
+      <span class="eyebrow" id="statusEyebrow">Ballots in</span>
+      <h2 id="statusHead">0 of 10</h2>
+      <div class="meter"><i id="meterBar" style="width:0%"></i></div>
+      <ul class="voters" id="voterList"></ul>
+      <p class="hint" id="statusNote">Results unlock when every ballot is in.</p>
+    </div>
+
+    <details id="orgBox">
+      <summary>Organizer: add ballot codes</summary>
+      <div class="panel">
+        <label class="field" for="pasteBox">Paste codes, as many at once as you like
+          <textarea id="pasteBox" placeholder="TOT-CMSLIH!IH-Jordan&#10;TOT-SICMLH-Emery"></textarea>
+        </label>
+        <div class="actions">
+          <button type="button" class="btn small" id="addBtn">Add ballots</button>
+          <span class="hint" id="addMsg"></span>
+        </div>
+        <div class="orgline">
+          <label class="field" for="expected">Voters expected
+            <input type="number" id="expected" min="1" max="40" value="10">
+          </label>
+          <div class="confirm" id="revealWrap">
+            <button type="button" class="btn ghost small" id="revealBtn">Reveal results now</button>
+          </div>
+        </div>
+        <p class="hint" id="storeNote"></p>
+      </div>
+    </details>
+
+    <div id="results" hidden></div>
+  </section>
+
+  <footer>Ballot codes look like <span style="font-family:var(--mono)">TOT-CMSLIH!IH-Jordan</span>: the six letters are the ranking, and the letters after the ! are your hard nos, picked from your bottom two (here Sea Island and Harbour Island). A bare ! means just the last pick.</footer>
+</div>
+
+<script>
+/* ---------- data ---------- */
+const PLACES=[
+ {k:"S",id:"sedona",name:"Sedona",loc:"Sedona, Arizona, USA",sub:"L'Auberge · one roof (Creekhouse)",price:"~$450–800 pp/night · ~$1,350–2,400 pp for 3 nights"},
+ {k:"I",id:"seaisland",name:"Sea Island",loc:"Sea Island, Georgia, USA",sub:"The Cloister or Emery's family house",price:"~$600–1,300 pp/night at the Cloister · ~$1,800–3,900 pp for 3 nights"},
+ {k:"C",id:"cabos",name:"Los Cabos",loc:"Los Cabos, Baja California Sur, Mexico",sub:"Chileno Bay · 5 rooms; villa decided later",price:"~$650–1,000 pp/night · ~$1,950–3,000 pp for 3 nights"},
+ {k:"L",id:"catalinas",name:"Las Catalinas",loc:"Las Catalinas, Guanacaste, Costa Rica",sub:"Casa Chameleon · 5 villas",price:"~$450–700 pp/night · ~$1,350–2,100 pp for 3 nights"},
+ {k:"H",id:"harbour",name:"Harbour Island",loc:"Harbour Island, Eleuthera, The Bahamas",sub:"Tree House rental · whole house",price:"~$200 pp/night · ~$603 pp for 3 nights (all-in quote)"},
+ {k:"M",id:"mayakoba",name:"Mayakoba",loc:"Mayakoba, Playa del Carmen, Quintana Roo, Mexico",sub:"Rosewood · 5 suites; villa decided later",price:"~$600–900 pp/night · ~$1,800–2,700 pp for 3 nights"}
+];
+const BY_K=Object.fromEntries(PLACES.map(p=>[p.k,p]));
+const N=PLACES.length,MAXNO=2,NO_ZONE=2,NO_FLAG=3; /* hard nos only on the bottom NO_ZONE; NO_FLAG+ hard nos on a winner means talk first */
+
+/* ---------- pure logic (scoring + codes) ---------- */
+function makeCode(name,order,hardNo){return "TOT-"+order.join("")+(hardNo.length?"!"+order.filter(k=>hardNo.includes(k)).join(""):"")+"-"+name.trim().replace(/\s+/g," ")}
+function parseCodes(text){
+  const out=[],re=/TOT-([A-Za-z]{6})(?:(!)([A-Za-z]*))?-([^\n\r]*?)(?=\s*TOT-|[\r\n]|$)/g;let m;
+  while((m=re.exec(text))){
+    const order=m[1].toUpperCase().split(""),name=m[4].trim().replace(/[.,;]+$/,""),hn=m[2]?(m[3]?[...new Set(m[3].toUpperCase().split(""))]:[order[N-1]]):[];
+    const valid=order.every(c=>BY_K[c])&&new Set(order).size===N&&name.length>0&&hn.length<=MAXNO&&hn.every(c=>!!BY_K[c]&&order.indexOf(c)>=N-NO_ZONE);
+    out.push(valid?{name,order,hardNo:hn}:{bad:m[0]});
+  }
+  return out;
+}
+function voterKey(name){return name.trim().toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"anon"}
+function score(ballots){
+  const keys=PLACES.map(p=>p.k),S={};
+  keys.forEach(k=>S[k]={k,points:0,firsts:0,lasts:0,hardNos:0,wins:0,losses:0,ties:0});
+  const beats={};keys.forEach(a=>{beats[a]={};keys.forEach(b=>beats[a][b]=0)});
+  ballots.forEach(b=>{
+    b.order.forEach((k,i)=>{S[k].points+=N-i});
+    S[b.order[0]].firsts++;S[b.order[N-1]].lasts++;
+    b.hardNo.forEach(k=>{if(S[k])S[k].hardNos++});
+    for(let i=0;i<N;i++)for(let j=i+1;j<N;j++)beats[b.order[i]][b.order[j]]++;
+  });
+  keys.forEach(a=>keys.forEach(b=>{if(a===b)return;const d=beats[a][b]-beats[b][a];if(d>0)S[a].wins++;else if(d<0)S[a].losses++;else S[a].ties++}));
+  const rows=keys.map(k=>S[k]);
+  rows.sort((x,y)=>{
+    if(y.points!==x.points)return y.points-x.points;
+    const h=beats[y.k][x.k]-beats[x.k][y.k];if(h)return h;
+    if(y.firsts!==x.firsts)return y.firsts-x.firsts;
+    if(x.hardNos!==y.hardNos)return x.hardNos-y.hardNos;
+    return 0;
+  });
+  const condorcet=rows.find(r=>r.wins===N-1)||null;
+  const lead=rows[0],second=rows[1];
+  let verdict;
+  const beater=condorcet&&condorcet.k!==lead.k?condorcet:rows.find(x=>x.k!==lead.k&&beats[x.k][lead.k]>beats[lead.k][x.k])||null;
+  const evens=rows.filter(x=>x.k!==lead.k&&beats[x.k][lead.k]===beats[lead.k][x.k]).map(x=>x.k);
+  if(condorcet&&condorcet.k===lead.k)verdict={type:"clean",winner:lead.k};
+  else if(beater)verdict={type:"split",a:lead.k,b:beater.k};
+  else verdict={type:"even",winner:lead.k,evens};
+  const tied=lead.points===second.points&&beats[lead.k][second.k]===beats[second.k][lead.k]&&lead.firsts===second.firsts;
+  return {rows,beats,condorcet,verdict,tied,margin:lead.points-second.points};
+}
+
+/* ---------- state ---------- */
+const LS={get(k,d){try{const v=localStorage.getItem("tot:"+k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem("tot:"+k,JSON.stringify(v))}catch(e){}}};
+/* each voter starts from a shuffled order, so nobody's ballot leans on the deck's order */
+const shuffled=()=>{const a=PLACES.map(p=>p.k);for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+let order=LS.get("order",null);
+if(!(Array.isArray(order)&&order.length===N&&order.every(k=>BY_K[k])&&new Set(order).size===N))order=shuffled();
+let localBallots=LS.get("ballots",{});      // key -> {name,order,hardNo,src,at}
+let sharedBallots={};                         // from db
+let meta={expected:LS.get("expected",10),revealed:LS.get("revealed",false)};
+let db=null,user=null,isOwner=false,myId=null;
+
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+$("voterName").value=LS.get("name","");
+let hardNo=LS.get("hardNo",[]);hardNo=(Array.isArray(hardNo)?hardNo:typeof hardNo==="string"?hardNo.split(""):[]).filter((k,i,a)=>BY_K[k]&&a.indexOf(k)===i).slice(0,MAXNO);
+
+/* ---------- ballot UI ---------- */
+const GRIP='<svg viewBox="0 0 10 16" aria-hidden="true"><circle cx="2" cy="2" r="1.6"/><circle cx="8" cy="2" r="1.6"/><circle cx="2" cy="8" r="1.6"/><circle cx="8" cy="8" r="1.6"/><circle cx="2" cy="14" r="1.6"/><circle cx="8" cy="14" r="1.6"/></svg>';
+function renderList(){
+  const kept=hardNo.filter(k=>order.indexOf(k)>=N-NO_ZONE);if(kept.length!==hardNo.length){hardNo=kept;LS.set("hardNo",hardNo)}
+  const hn=hardNo;
+  $("rankList").innerHTML=order.map((k,i)=>{const p=BY_K[k],last=i===N-1,v=hn.includes(k),pts=N-i;
+    return `<li class="row${v?" vetoed":""}" data-k="${k}">
+      <button type="button" class="handle" aria-label="Drag to reorder ${esc(p.name)}">${GRIP}</button>
+      <div class="num">${i+1}<small>${pts>0?"+":""}${pts} pts</small></div>
+      <div class="place"><b>${esc(p.name)}</b><span class="loc">📍 ${esc(p.loc)}</span><span>${esc(p.sub)}</span><span class="price">${esc(p.price)}</span>${i>=N-NO_ZONE?`<button type="button" class="vetobtn" data-veto aria-pressed="${v}"${!v&&hn.length>=MAXNO?" disabled":""}>${v?"Hard no ✕":"Hard no?"}</button>`:""}</div>
+      <div class="moves"><button type="button" data-mv="-1" aria-label="Move ${esc(p.name)} up" ${i===0?"disabled":""}>▲</button><button type="button" data-mv="1" aria-label="Move ${esc(p.name)} down" ${last?"disabled":""}>▼</button></div>
+    </li>`}).join("");
+  LS.set("order",order);
+}
+function move(k,d){const i=order.indexOf(k),j=i+d;if(j<0||j>=N)return;[order[i],order[j]]=[order[j],order[i]];renderList();
+  const btn=$("rankList").querySelector(`[data-k="${k}"] [data-mv="${d}"]`)||$("rankList").querySelector(`[data-k="${k}"] .handle`);btn&&btn.focus()}
+$("rankList").addEventListener("click",e=>{const vb=e.target.closest("[data-veto]");if(vb){const k=vb.closest(".row").dataset.k;if(!hardNo.includes(k)&&(hardNo.length>=MAXNO||order.indexOf(k)<N-NO_ZONE))return;hardNo=hardNo.includes(k)?hardNo.filter(x=>x!==k):hardNo.concat(k);LS.set("hardNo",hardNo);renderList();hideReceipt();const nb=$("rankList").querySelector(`[data-k="${k}"] [data-veto]`);nb&&nb.focus();return}const b=e.target.closest("[data-mv]");if(!b)return;move(b.closest(".row").dataset.k,+b.dataset.mv);hideReceipt()});
+/* pointer drag on the handle: the row follows the pointer, the others slide aside, order commits on release */
+$("rankList").addEventListener("pointerdown",e=>{
+  const h=e.target.closest(".handle");if(!h||(e.pointerType==="mouse"&&e.button!==0))return;e.preventDefault();
+  const list=$("rankList"),row=h.closest(".row"),rows=[...list.children],from=rows.indexOf(row);
+  const rects=rows.map(r=>r.getBoundingClientRect()),gap=rows.length>1?rects[1].top-rects[0].bottom:8;
+  const centers=rects.map(r=>r.top+r.height/2),dh=rects[from].height+gap;
+  const startY=e.clientY,startScroll=window.scrollY;
+  let to=from,lastY=e.clientY,raf=0,done=false;
+  try{h.setPointerCapture(e.pointerId)}catch(err){}
+  row.classList.add("dragging");row.style.transition="none";row.style.willChange="transform";
+  rows.forEach(r=>{if(r!==row)r.style.transition="transform .18s ease"});
+  document.body.style.userSelect="none";
+  const label=(r,idx)=>{const n=r.querySelector(".num"),sm=n.querySelector("small");n.firstChild.nodeValue=String(idx+1);if(sm)sm.textContent="+"+(N-idx)+" pts"};
+  const update=()=>{
+    const dy=lastY-startY+(window.scrollY-startScroll);
+    row.style.transform=`translateY(${dy}px) rotate(1.5deg) scale(1.02)`;
+    const c=centers[from]+dy;let t=0;rows.forEach((r,i)=>{if(i!==from&&centers[i]<c)t++});
+    to=t;
+    rows.forEach((r,i)=>{
+      if(i===from){label(r,to);return}
+      let sh=0,ni=i;
+      if(from<to&&i>from&&i<=to){sh=-dh;ni=i-1}else if(from>to&&i<from&&i>=to){sh=dh;ni=i+1}
+      r.style.transform=`translateY(${sh}px)`;label(r,ni)});
+  };
+  const tick=()=>{if(done)return;const vh=window.innerHeight,zone=70;let v=0;
+    if(lastY<zone)v=-Math.ceil((zone-lastY)/6);else if(lastY>vh-zone)v=Math.ceil((lastY-(vh-zone))/6);
+    if(v){window.scrollBy(0,v);update()}
+    raf=requestAnimationFrame(tick)};
+  raf=requestAnimationFrame(tick);
+  const finish=commit=>{
+    if(done)return;done=true;cancelAnimationFrame(raf);
+    if(!commit){to=from;rows.forEach(r=>{if(r!==row)r.style.transform="translateY(0px)"})}
+    let off=0;
+    if(to>from)for(let i=from+1;i<=to;i++)off+=rects[i].height+gap;
+    else if(to<from)for(let i=to;i<from;i++)off-=rects[i].height+gap;
+    row.style.transition="transform .16s ease";row.style.transform=`translateY(${off}px)`;
+    setTimeout(()=>{
+      document.body.style.userSelect="";
+      if(commit&&to!==from){const arr=rows.map(r=>r.dataset.k),k=arr.splice(from,1)[0];arr.splice(to,0,k);order=arr}
+      renderList();hideReceipt()},170);
+  };
+  h.addEventListener("pointermove",ev=>{if(done)return;lastY=ev.clientY;update()});
+  h.addEventListener("pointerup",()=>finish(true));
+  h.addEventListener("pointercancel",()=>finish(false));
+  h.addEventListener("lostpointercapture",()=>finish(true));
+});
+$("voterName").addEventListener("input",()=>{LS.set("name",$("voterName").value);hideReceipt()});
+function hideReceipt(){$("receipt").hidden=true}
+
+$("submitBtn").addEventListener("click",async()=>{
+  const name=$("voterName").value.trim();
+  if(!name){$("submitHint").innerHTML='<span class="err">Add your name first so Lauren knows whose ballot it is.</span>';$("voterName").focus();return}
+  $("submitHint").textContent="";
+  const code=makeCode(name,order,hardNo);
+  $("codeBox").textContent=code;$("copyMsg").textContent="";
+  let sent=false;
+  if(db&&myId){
+    try{await db.doc("votes/"+myId).set({name,order:order.join(""),hardNo:order.filter(k=>hardNo.includes(k)).join(""),at:Date.now()});sent=true}catch(e){sent=false}
+  }
+  $("receiptMsg").innerHTML=sent
+    ? '<span class="ok">Submitted. You\'re done.</span> <span class="hint">Your ballot is in the tally. Re-rank and submit again any time before results are revealed. The code below is a backup only.</span>'
+    : '<b>Here\'s your ballot.</b>';
+  $("receiptHow").hidden=sent;
+  $("receipt").hidden=false;$("receipt").scrollIntoView({behavior:matchMedia("(prefers-reduced-motion:reduce)").matches?"auto":"smooth",block:"nearest"});
+});
+$("copyBtn").addEventListener("click",()=>{
+  const t=$("codeBox").textContent;
+  const fallback=()=>{const r=document.createRange();r.selectNodeContents($("codeBox"));const s=getSelection();s.removeAllRanges();s.addRange(r);$("copyMsg").textContent="Selected. Copy it from your keyboard or menu."};
+  try{navigator.clipboard.writeText(t).then(()=>{$("copyMsg").textContent="Copied."},fallback)}catch(e){fallback()}
+});
+
+/* ---------- tally ---------- */
+function allBallots(){
+  const m={};
+  Object.values(sharedBallots).concat(Object.values(localBallots)).forEach(b=>{if(!Array.isArray(b.hardNo))b.hardNo=b.hardNo===true?[b.order[N-1]]:(typeof b.hardNo==="string"?b.hardNo.split("").filter(c=>BY_K[c]):[]);const k=voterKey(b.name);if(!m[k]||(b.at||0)>=(m[k].at||0))m[k]=b});
+  return m;
+}
+function render(){
+  const all=allBallots(),list=Object.entries(all).sort((a,b)=>a[1].name.localeCompare(b[1].name)),n=list.length,exp=Math.max(1,+meta.expected||10);
+  $("tabCount").textContent=n?`${n}/${exp}`:"";
+  $("statusHead").textContent=`${n} of ${exp}`;
+  $("meterBar").style.width=Math.min(100,n/exp*100)+"%";
+  const canRemove=k=>!!localBallots[k]||(isOwner&&all[k]&&all[k].src==="paste");
+  $("voterList").innerHTML=list.map(([k,b])=>`<li>${esc(b.name)}<em>${b.src==="direct"?"direct":"code"}</em>${canRemove(k)?`<button type="button" data-rm="${esc(k)}" aria-label="Remove ${esc(b.name)}'s ballot">×</button>`:""}</li>`).join("");
+  const show=n>0&&(n>=exp||meta.revealed);
+  $("statusEyebrow").textContent=show?"All in":"Ballots in";
+  $("statusNote").textContent=n===0?"No ballots yet. Ballots appear here as they come in.":show?(n<exp?`Revealed early with ${n} of ${exp}.`:"Every ballot is in."):`Results unlock at ${exp}. Waiting on ${exp-n} more.`;
+  $("expected").value=exp;
+  $("results").hidden=!show;
+  if(show)renderResults(list.map(([,b])=>b));
+}
+function renderResults(ballots){
+  const r=score(ballots),nm=k=>BY_K[k].name,v=r.verdict;
+  let head,body,cls;
+  if(r.tied){cls="close";head="Dead heat";body=`${nm(r.rows[0].k)} and ${nm(r.rows[1].k)} are tied on points, head to head and first-place votes. Run those two off.`}
+  else if(v.type==="clean"){cls="clean";head=nm(v.winner);body=`Wins on points by ${r.margin} and beats every other place head to head.`}
+  else if(v.type==="split"){cls="close";head="Runoff";body=`${nm(v.a)} has the most points, but more of us would pick ${nm(v.b)} in a straight two-way vote. Put just those two to a vote.`}
+  else{cls="clean";head=nm(v.winner);body=`Wins on points by ${r.margin}. Nothing beats it head to head, though ${v.evens.map(nm).join(" and ")} ${v.evens.length===1?"splits":"split"} it evenly.`}
+  const shown=r.tied?[r.rows[0].k,r.rows[1].k]:v.type==="split"?[v.a,v.b]:[v.winner];
+  const hnOf=k=>r.rows.find(x=>x.k===k).hardNos,who=n=>`${n} ${n===1?"person":"people"}`;
+  const flags=shown.filter(k=>hnOf(k)>=NO_FLAG),notes=shown.filter(k=>hnOf(k)>0&&hnOf(k)<NO_FLAG);
+  if(flags.length){
+    if(cls==="clean")cls="close";
+    body+=" "+flags.map(k=>`${nm(k)} got a hard no from ${who(hnOf(k))}.`).join(" ");
+    const safe=r.rows.find(x=>x.hardNos<NO_FLAG&&!shown.includes(x.k));
+    body+=` That's enough to talk it through before booking.${safe?` The next-best place without that many hard nos is ${nm(safe.k)}.`:""}`;
+  }else{
+    if(notes.length)body+=" "+notes.map(k=>`${nm(k)} got a hard no from ${who(hnOf(k))}, under the ${NO_FLAG} it takes to pause.`).join(" ");
+    else if(cls==="clean")body+=" Nobody hard-no'd it.";
+    if(v.type==="clean"&&!r.tied)body+=" That's a clean win.";
+  }
+  const keys=r.rows.map(x=>x.k),B=ballots.length;
+  $("results").innerHTML=`
+  <div class="panel">
+    <div class="verdict ${cls}"><span class="eyebrow">${cls==="clean"?"The winner":"The call"}</span><h2>${esc(head)}</h2><p>${esc(body)}</p></div>
+    <div class="tablewrap"><table>
+      <thead><tr><th>#</th><th>Place</th><th class="n">Points</th><th class="n">First picks</th><th class="n">Last picks</th><th class="n">Hard nos</th><th class="n">Head to head</th></tr></thead>
+      <tbody>${r.rows.map((x,i)=>`<tr class="${i===0?"lead":""}"><td>${i+1}</td><td><b>${esc(nm(x.k))}</b><small style="display:block;color:var(--muted)">${esc(BY_K[x.k].loc)}</small></td><td class="pts">${x.points}</td><td class="n">${x.firsts}</td><td class="n">${x.lasts}</td><td class="n">${x.hardNos}</td><td class="n">${x.wins}–${x.losses}${x.ties?`–${x.ties}`:""}</td></tr>`).join("")}</tbody>
+    </table></div>
+    <details><summary>Every head-to-head matchup</summary>
+      <p class="hint" style="margin-bottom:10px">Each cell: how many of the ${B} ranked the row's place above the column's.</p>
+      <div class="tablewrap"><table class="matrix"><thead><tr><th></th>${keys.map(k=>`<th>${esc(nm(k))}</th>`).join("")}</tr></thead>
+      <tbody>${keys.map(a=>`<tr><th style="text-align:left">${esc(nm(a))}</th>${keys.map(b=>a===b?"<td>·</td>":`<td class="${r.beats[a][b]>r.beats[b][a]?"w":r.beats[a][b]<r.beats[b][a]?"l":""}">${r.beats[a][b]}</td>`).join("")}</tr>`).join("")}</tbody></table></div>
+    </details>
+    <details><summary>Every ballot</summary>
+      <div class="tablewrap"><table><thead><tr><th>Name</th>${PLACES.map((_,i)=>`<th>${i+1}</th>`).join("")}</tr></thead>
+      <tbody>${ballots.map(b=>`<tr><td><b>${esc(b.name)}</b></td>${b.order.map((k,i)=>`<td${b.hardNo.includes(k)?' style="color:var(--no);font-weight:700"':""}>${esc(nm(k))}${b.hardNo.includes(k)?" ✕":""}</td>`).join("")}</tr>`).join("")}</tbody></table></div>
+    </details>
+  </div>`;
+}
+$("voterList").addEventListener("click",async e=>{const b=e.target.closest("[data-rm]");if(!b)return;const k=b.dataset.rm;
+  if(localBallots[k]){delete localBallots[k];LS.set("ballots",localBallots)}
+  if(isOwner&&db){try{await db.doc("pasted/"+k).delete()}catch(e){}}
+  delete sharedBallots["p:"+k];render()});
+$("addBtn").addEventListener("click",async()=>{
+  const got=parseCodes($("pasteBox").value),good=got.filter(g=>!g.bad),bad=got.filter(g=>g.bad);
+  if(!got.length){$("addMsg").innerHTML='<span class="err">No codes found. They start with TOT-.</span>';return}
+  for(const g of good){const k=voterKey(g.name),rec={name:g.name,order:g.order,hardNo:g.hardNo,src:"paste",at:Date.now()};
+    let saved=false;
+    if(isOwner&&db){try{await db.doc("pasted/"+k).set({name:g.name,order:g.order.join(""),hardNo:g.order.filter(k=>g.hardNo.includes(k)).join(""),at:rec.at});saved=true}catch(e){}}
+    if(!saved){localBallots[k]=rec}
+  }
+  LS.set("ballots",localBallots);
+  $("addMsg").innerHTML=`<span class="ok">Added ${good.length}.</span>`+(bad.length?` <span class="err">${bad.length} didn't read right: ${bad.map(b=>esc(b.bad)).join(", ")}. Ask for a fresh code.</span>`:"");
+  if(good.length)$("pasteBox").value="";
+  render();
+});
+$("expected").addEventListener("change",async()=>{meta.expected=Math.max(1,Math.min(40,+$("expected").value||10));LS.set("expected",meta.expected);
+  if(isOwner&&db){try{await db.doc("meta/state").set({expected:meta.expected,revealed:!!meta.revealed})}catch(e){}}render()});
+/* two-step reveal, built into the page */
+$("revealWrap").addEventListener("click",async e=>{
+  const id=e.target.id;
+  if(id==="revealBtn"){$("revealWrap").innerHTML='<span>Show results before everyone has voted?</span><button type="button" class="btn small" id="revealYes">Yes, reveal</button><button type="button" class="btn ghost small" id="revealNo">Not yet</button>';return}
+  if(id==="revealYes"){meta.revealed=true;LS.set("revealed",true);if(isOwner&&db){try{await db.doc("meta/state").set({expected:meta.expected,revealed:true})}catch(e){}}}
+  if(id==="revealYes"||id==="revealNo"){$("revealWrap").innerHTML='<button type="button" class="btn ghost small" id="revealBtn">Reveal results now</button>';render()}
+});
+
+/* tabs */
+function showTab(t){const b=t==="tally";$("p-ballot").hidden=b;$("p-tally").hidden=!b;$("tab-ballot").setAttribute("aria-selected",String(!b));$("tab-tally").setAttribute("aria-selected",String(b));LS.set("tab",t)}
+$("tab-ballot").onclick=()=>showTab("ballot");$("tab-tally").onclick=()=>showTab("tally");
+const ORG=/^#(organizer|tally)$/.test(location.hash);document.body.classList.toggle("org",ORG);
+showTab(ORG?(location.hash==="#tally"?"tally":LS.get("tab","ballot")):"ballot");
+addEventListener("hashchange",()=>location.reload());
+
+/* ---------- optional: direct submit when this page has a shared store ---------- */
+function docsOf(snap){
+  const arr=Array.isArray(snap)?snap:(snap&&(snap.docs||snap.items||snap.results))||[];
+  return arr.map(d=>{const data=typeof d.data==="function"?d.data():(d.data&&typeof d.data==="object"?d.data:d);return {id:d.id||(d.ref&&d.ref.id)||"",data:data||{}}});
+}
+function toBallot(d,src){const o=String(d.order||"").toUpperCase().split("");
+  if(!d.name||o.length!==N||!o.every(c=>BY_K[c])||new Set(o).size!==N)return null;
+  const hs=d.hardNo===true?o[N-1]:Array.isArray(d.hardNo)?d.hardNo.join(""):typeof d.hardNo==="string"?d.hardNo:"",hn=[...new Set(hs.toUpperCase().split(""))].filter(k=>BY_K[k]).slice(0,MAXNO);
+  return {name:String(d.name).slice(0,30),order:o,hardNo:hn,src,at:+d.at||0}}
+async function connect(){
+  if(!window.claude||typeof window.claude.use!=="function"){$("storeNote").textContent="Codes you add are saved in this browser only, so tally from the same device each time.";return}
+  try{
+    const [d,u]=await Promise.all([claude.use("db"),claude.use("user")]);
+    if(!d||!u){$("storeNote").textContent="Codes you add are saved in this browser only, so tally from the same device each time.";return}
+    db=d;user=u;
+    try{isOwner=!!(await user.isOwner())}catch(e){isOwner=false}
+    try{myId=await user.id()}catch(e){myId=null}
+    if(myId){$("submitBtn").textContent="Submit my ballot";$("submitHint").textContent="You're signed in, so this goes straight into the tally."}
+    $("storeNote").textContent=isOwner?"Codes you add are saved to the shared tally, so anyone opening this page sees the count.":"Only the page owner's pasted codes join the shared tally.";
+    const sub=(path,src,prefix)=>{try{db.collection(path).onSnapshot(s=>{
+      Object.keys(sharedBallots).filter(k=>k.startsWith(prefix)).forEach(k=>delete sharedBallots[k]);
+      docsOf(s).forEach(x=>{const b=toBallot(x.data,src);if(b)sharedBallots[prefix+(x.id||voterKey(b.name))]=b});render()})}catch(e){}};
+    sub("votes","direct","v:");sub("pasted","paste","p:");
+    try{db.doc("meta/state").onSnapshot(s=>{const m=s&&(typeof s.data==="function"?s.data():s.data||s);if(m&&typeof m==="object"){if(m.expected)meta.expected=+m.expected;if(m.revealed)meta.revealed=true;render()}})}catch(e){}
+  }catch(e){$("storeNote").textContent="Codes you add are saved in this browser only, so tally from the same device each time."}
+}
+
+renderList();render();connect();
+</script>
+</body>
+</html>
